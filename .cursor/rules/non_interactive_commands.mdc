@@ -1,6 +1,58 @@
 ---
-description: 
-globs: 
-alwaysApply: false
+description: Rules for executing commands in non-interactive mode
+globs: ["**/*"]
+alwaysApply: true
 ---
- 
+
+# Non-Interactive Command Execution Rules
+
+When executing commands on behalf of the user, especially git and cat commands, always ensure they run in non-interactive mode to prevent hanging or requiring user input.
+
+## Git Commands
+
+Git doesn't have a universal `-y` flag, so use these specific approaches:
+
+1. **Avoid interactive prompts:**
+   - Use `git commit -m "message"` instead of just `git commit`
+   - Use `git merge --no-edit` to avoid opening an editor for merge commits
+   - Use `git push --force-with-lease` instead of `git push --force` when force pushing
+   - Use `git pull --no-edit` to avoid editor prompts during pulls with merge conflicts
+
+2. **For operations that might create a pager:**
+   - Always pipe to `cat` to prevent pager prompts: `git log | cat`
+   - Examples: `git diff | cat`, `git show | cat`, `git branch | cat`
+
+3. **For clone operations:**
+   - Use `git clone --quiet` to reduce output
+   - Specify the branch with `git clone -b branch_name` when needed
+
+4. **For checkout operations:**
+   - Use `git checkout -f branch_name` to force checkout and avoid prompts
+   - Use `git checkout -b new_branch` to create and checkout in one command
+
+## Cat Commands
+
+1. **Viewing files:**
+   - Use `cat -A` to show all characters including non-printable ones
+   - For large files, consider using `head -n 100 filename` instead of `cat`
+
+## Other Commands
+
+1. **For any command that might use a pager or require user interaction:**
+   - Append ` | cat` to the command
+   - Examples: `less file.txt | cat`, `more file.txt | cat`, `head file.txt | cat`, `tail file.txt | cat`
+
+2. **For commands that might prompt for confirmation:**
+   - Use `-y` or `--yes` flags when available
+   - For `rm`, use `rm -f` to force removal without prompting
+   - For `cp` or `mv` that might overwrite, use `-f` flag: `cp -f source dest`
+
+3. **For apt or package managers:**
+   - Use `apt-get -y install package` instead of `apt-get install package`
+   - Use `npm install --yes` instead of just `npm install` when appropriate
+
+4. **Background processes:**
+   - For long-running commands, consider running them in the background with `&`
+   - For commands expected to run indefinitely, set `is_background` to true in the tool call
+
+Always prefer command-line options that avoid prompts or interactive mode. If a command typically requires user input, find an alternative approach or use flags to provide default answers. 
